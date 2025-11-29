@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 import joblib
 import pandas as pd
@@ -7,12 +8,14 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
+import time
+from sklearn.metrics import accuracy_score
 
 
-# File Paths
+MODEL_VERSION = "v1"
 THIS_DIR = Path(__file__).parent
 DATA_PATH = THIS_DIR / "data.csv"
-MODEL_PATH = THIS_DIR / "model.joblib"
+MODEL_PATH = THIS_DIR / f"model_{MODEL_VERSION}.joblib"
 
 
 def load_data():
@@ -44,10 +47,10 @@ def build_pipeline():
 
 
 def train():
-    # 1. Load data
+    # Load data
     X, y = load_data()
 
-    # 2. Train/validation split
+
     X_train, X_val, y_train, y_val = train_test_split(
         X,
         y,
@@ -56,22 +59,36 @@ def train():
         stratify=y,  # keeps label distribution similar in both splits
     )
 
-    # 3. Build model
+    # Build model
     model = build_pipeline()
 
-    # 4. Fit model
+    # Fit model
     print("Training model...")
+    start_time = time.time()
     model.fit(X_train, y_train)
+    training_time = time.time() - start_time
 
-    # 5. Evaluate on validation set
+    # Evaluate on validation set
     print("\nValidation metrics:")
     y_pred = model.predict(X_val)
     print(classification_report(y_val, y_pred))
+    val_accuracy = accuracy_score(y_val, y_pred)
 
-    # 6. Save model artifact
+    #Save model artifact
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, MODEL_PATH)
     print(f"\nSaved trained model to: {MODEL_PATH.resolve()}")
+    json_path = MODEL_PATH.with_suffix(".json")
+    with open(json_path, "w") as f:
+        json.dump({
+            "model_version": MODEL_VERSION,
+            "training_time": training_time,  # Replace with actual training time in seconds
+            "datasize": len(X),
+            "train_size": len(X_train),
+            "val_size": len(X_val),
+            "validation_accuracy": val_accuracy
+        }, f)
+
 
 
 if __name__ == "__main__":
