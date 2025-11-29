@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary   # for PostgreSQL
+python-dotenv
+pydantic
+scikit-learn
+pandas
+joblib
+pytest
+httpx             # for API tests
